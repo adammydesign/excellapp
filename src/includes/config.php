@@ -1,4 +1,5 @@
 <?php
+<<<<<<< HEAD
 /*****
 Configuration File for Excell Supply Portal
 ******/
@@ -13,4 +14,8 @@ $link = mysqli_connect($dbhost,$dbuser,$dbpwd,$dbname) or die("Error " . mysqli_
 
 //Defined variables
 define('ROOT_URL', 'http://app.excell-supply.local');
+=======
+//configuration file
+
+>>>>>>> origin/master
 ?>

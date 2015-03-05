@@ -20,6 +20,7 @@ function create_salt() {
 		$i++;
 	}
 
+<<<<<<< HEAD
 	return $salt;
 }
 
@@ -69,4 +70,8 @@ function get_availability($link, $user_id) {
 }
 
 
+=======
+	echo $salt;
+}
+>>>>>>> origin/master
 ?>
