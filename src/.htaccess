@@ -1,0 +1,4 @@
+RewriteEngine On
+RewriteRule ^user/settings/([^/]*)$ /user/settings.php?user_id=$1 [L]
+RewriteRule ^user/messages/([^/]*)$ /user/messages.php?user_id=$1 [L]
+RewriteRule ^user/availability/([^/]*)$ /user/availability.php?user_id=$1 [L]

@@ -1,0 +1,273 @@
+/*****
+Main CSS for Portal
+*****/
+
+/****
+Fonts
+*****/
+
+h1, h2, h3, h4, h5 {
+	font-family: 'Maven Pro', sans-serif;
+}
+
+/****
+Body styles
+*****/
+
+.page-content {
+	margin-top: 30px;
+}
+
+.btn {
+	border-radius: 0px;
+	-moz-border-radius: 0px;
+	-webkit-border-radius: 0px;
+	-ms-border-radius: 0px;
+	-o-border-radius: 0px;
+	font-family: 'Maven Pro', sans-serif;
+	font-weight: 500;
+}
+
+/****
+Login styles
+*****/
+.login-body {
+	min-height: 100%;
+	display: block;
+ 	background: #ffffff;  
+}
+
+#login_result {
+	width: 100%;
+	display: block;
+	padding-bottom: 12px;
+}
+
+#login_result span {
+	font-family: 'Maven Pro', sans-serif;
+	font-weight: 700;
+}
+
+.input-group {
+	margin-bottom: 12px;
+	border: 1px solid #ccc;
+}
+
+.input-group-addon {
+	background-color: transparent;
+	border: none!important;
+}
+
+.form-signin input[type="text"] {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    background-color: transparent;
+}
+
+.form-signin input[type="password"] {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.form-signin .form-control {
+    position: relative;
+    font-size: 16px;
+    font-family: 'Maven Pro', sans-serif;
+    font-weight: 500;
+    height: auto;
+    padding: 10px;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    background-color: transparent;
+    border: none!important;
+}
+
+.vertical-offset-100 {
+    padding-top: 100px;
+}
+
+.img-responsive {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: auto;
+}
+
+.login-panel .panel-heading {
+	background-color: transparent;
+	padding-top: 30px;
+	padding-bottom: 0px;
+	border: none;
+}
+
+.login-panel .panel-body {
+	padding-top: 0px;
+}
+
+.login-panel {
+	margin-bottom: 20px;
+	background-color: transparent;
+	border: 1px solid #dddddd;
+	border-radius: 4px;
+	-webkit-box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .05);
+	display: none;
+}
+
+/****
+Navigation
+*****/
+
+.main-nav {
+	background-color: #232B2D;
+	border-radius: 0px;
+	margin-bottom: 0px;
+}
+
+.navbar-brand {
+	height: auto;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.logo {
+	height: 45px;
+	width: auto;
+}
+
+.nav-user-avatar {
+	margin-right: 12px;
+}
+
+nav.main-nav .nav li a {
+	font-family: 'Maven Pro', sans-serif;
+	font-weight: 500;
+	font-size: 18px;
+	color: #768184;
+	padding: 23px 18px;
+}
+
+nav.main-nav .nav li.active a {
+	background: transparent;
+}
+
+nav.main-nav .nav li.active a:hover, nav.main-nav .navbar-right li.open a.dropdown-toggle {
+	background-color: #21292B;
+}
+
+nav.main-nav .navbar-right li a {
+	padding: 10px 15px 13px;
+}
+
+.search-form {
+	padding-top: 15px;
+	padding-right: 20px;
+}
+
+.header-search {
+	background: url('../img/search-icon.png') no-repeat 8% center #313B3D;
+	border: none;
+	padding: 8px 12px;
+	border-radius: 8px;
+	-moz-border-radius: 8px;
+	-webkit-border-radius: 8px;
+	-ms-border-radius: 8px;
+	-o-border-radius: 8px;
+	color: #ffffff;
+	font-family: 'Maven Pro', sans-serif;
+}
+
+.header-search:focus {
+	outline: none;
+}
+
+.nav ul.dropdown-menu li a {
+	padding-top: 12px;
+	padding-bottom: 12px;
+}
+
+/****
+Sidebar Nav
+*****/
+
+
+.sidebar-nav li a {
+	font-size: 18px;
+	font-family: 'Maven Pro', sans-serif;
+	font-weight: 500;
+	color: #394345;
+	padding: 8px 10px;
+}
+
+.sidebar-nav li.active a, .sidebar-nav li.active a .fa, .sidebar-nav li.active a:hover {
+	background-color: #78C8CE;
+	color: #ffffff;
+}
+
+.sidebar-nav li a .fa {
+	color: #95A2A6;
+}
+
+.sidebar-nav li .submenu {
+	display: none;
+}
+
+.sidebar-nav li.active .submenu {
+	display: block;
+}
+
+.sidebar-nav li.active .submenu li a {
+	display: block;
+	padding-left: 40px;
+	background-color: transparent;
+	color: #95A2A6;
+}
+
+.sidebar-nav li.active .submenu li a:hover, .sidebar-nav li.active .submenu li.active a{
+	color: #78C8CE;
+}
+
+/******
+Alerts
+*******/
+
+.alert-header {
+	border-radius: 0px!important;
+	-moz-border-radius: 0px!important;
+	-webkit-border-radius: 0px!important;
+	-o-border-radius: 0px!important;
+	-ms-border-radius: 0px!important;
+	text-align: center;
+	color: #ffffff;
+	padding-right: 0px;
+	padding-left: 0px;
+	border: none;
+	font-family: 'Maven Pro', sans-serif;
+}
+
+.alert-header a {
+	color: #ffffff;
+	text-decoration: underline;
+}
+
+.alert-header a.btn {
+	text-decoration: none;
+}
+
+.alert-warning {
+	background-color: #FA7252;
+}
+
+.alert-success {
+	background-color: #7ED321;
+}
+
+.alert-danger {
+	background-color: #DF0621;
+}
+
+.alert-info {
+	background-color: #78C8CE;
+}
+
