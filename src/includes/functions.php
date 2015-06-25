@@ -1,4 +1,35 @@
 <?php
+//Clean Input Function
+function cleanInput($input) {
+ 
+  $search = array(
+    '@<script[^>]*?>.*?</script>@si',   // Strip out javascript
+    '@<[\/\!]*?[^<>]*?>@si',            // Strip out HTML tags
+    '@<style[^>]*?>.*?</style>@siU',    // Strip style tags properly
+    '@<![\s\S]*?--[ \t\n\r]*>@'         // Strip multi-line comments
+  );
+ 
+    $output = preg_replace($search, '', $input);
+    return $output;
+
+}
+
+//sanitize input function
+function sanitize($link, $input) {
+    if (is_array($input)) {
+        foreach($input as $var=>$val) {
+            $output[$var] = sanitize($val);
+        }
+    }
+    else {
+        if (get_magic_quotes_gpc()) {
+            $input = stripslashes($input);
+        }
+        $input  = cleanInput($input);
+        $output = mysqli_real_escape_string($link, $input);
+    }
+    return $output;
+}
 
 //check if user is logged in function
 function is_loggedin($username) {
@@ -112,6 +143,46 @@ function availability_reminder($link, $user_id) {
 	
 }
 
+//get avatar
+function get_avatar($link, $user_id) {
+
+	//check if there is an avatar
+	$avatar_name = get_user_data($link, $user_id, 'user_avatar');
+
+	if(empty($avatar_name)) {
+		$avatar = '<img src="'.ROOT_URL.'/img/temp-avatar.png" class="img-circle nav-user-avatar" height="44" width="44"/>';
+	} else {
+		$avatar = '<img src="'.ROOT_URL.'/user/user_avatars/'.$avatar_name.'" class="img-circle nav-user-avatar" height="44" width="44" />';
+	}
+
+	return $avatar;
+}
+
+//Unread message count
+function unread_messages($link) {
+
+	$user_id = $_SESSION['user_id'];
+
+	$check_messages = mysqli_query($link, "SELECT `message_id` FROM `excell_messages` WHERE `received_id` = '$user_id' AND `opened` = '0'");
+
+	return mysqli_num_rows($check_messages);
+}
+
+//message_excerpt
+function message_excerpt($body) {
+
+	if(strlen($body) > 75) {
+		$excerpt   = substr($body, 0, 75);
+		$lastSpace = strrpos($excerpt, ' ');
+		$excerpt   = substr($excerpt, 0, $lastSpace);
+		$excerpt  .= '...';
+	} else {
+		$excerpt = $body;
+	}
+
+	return $excerpt;
+}
+
 //alert function
 function alert($alert = '', $type = '', $method = '', $status = 'success', $user_id = '', $forum_id = '', $name = '', $link) {
 
@@ -126,7 +197,7 @@ function alert($alert = '', $type = '', $method = '', $status = 'success', $user
 				if($status == 'success') {
 					$icon = '<i class="fa fa-fw fa-bell"></i>';
 					$style = 'alert-success';
-					$message = 'New user has been created. View <a href="'.ROOT_URL.'/user/'.$user_id.'" alt="'.get_user_data($link, $user_id, 'user_fullname').'">'.get_user_data($link, $user_id, 'user_fullname').'</a>';
+					$message = 'New user has been created. View <a href="'.ROOT_URL.'/user/'.$user_id.'" alt="'.$name.'">'.$name.'</a>';
 				} else {
 					$icon = '<i class="fa fa-fw fa-bell"></i>';
 					$style = 'alert-warning';
@@ -134,6 +205,19 @@ function alert($alert = '', $type = '', $method = '', $status = 'success', $user
 				}
 
 			//if method is edit
+			} elseif($method == 'status') {
+				
+				if($status == 'success') {
+					$icon = '<i class="fa fa-fw fa-bell"></i>';
+					$style = 'alert-success';	
+					$message = '<a href="'.ROOT_URL.'/user/'.$user_id.'" alt="(User name function)">'.get_user_data($link, $user_id, 'user_fullname').'</a> status has been updated.';
+				} else {
+					$icon = '<i class="fa fa-fw fa-bell"></i>';
+					$style = 'alert-warning';
+					$message = 'There seems to be a problem updating the status of '.get_user_data($link, $user_id, 'user_fullname').'. Please try again.';
+				}
+
+			//if method is delete
 			} elseif($method == 'edit') {
 				
 				if($status == 'success') {
@@ -364,6 +448,569 @@ function alert($alert = '', $type = '', $method = '', $status = 'success', $user
 
 		echo '<div class="alert alert-header alert-header-dismiss '.$style.'">'.$icon.' '.$message.'</div>';
 	}
+}
+
+function pagination($query,$per_page=10,$page=1,$url='?'){   
+    global $link; 
+    $query = "SELECT COUNT(*) as `num` FROM {$query}";
+    $row = mysqli_fetch_array(mysqli_query($link,$query));
+    $total = $row['num'];
+    $adjacents = "2"; 
+      
+    $prevlabel = "&lsaquo; Prev";
+    $nextlabel = "Next &rsaquo;";
+    $lastlabel = "Last &rsaquo;&rsaquo;";
+      
+    $page = ($page == 0 ? 1 : $page);  
+    $start = ($page - 1) * $per_page;                               
+      
+    $prev = $page - 1;                          
+    $next = $page + 1;
+      
+    $lastpage = ceil($total/$per_page);
+      
+    $lpm1 = $lastpage - 1; // //last page minus 1
+      
+    $pagination = "";
+    if($lastpage > 1){   
+        $pagination .= "<ul class='pagination'>";
+        //$pagination .= "<li class='page_info'>Page {$page} of {$lastpage}</li>";
+              
+        if ($page > 1) $pagination.= "<li><a href='{$url}page={$prev}'>{$prevlabel}</a></li>";
+              
+        if ($lastpage < 7 + ($adjacents * 2)){   
+            for ($counter = 1; $counter <= $lastpage; $counter++){
+                if ($counter == $page)
+                    $pagination.= "<li><a href='{$url}page={$counter}' class='current'>{$counter}</a></li>";
+                else
+                    $pagination.= "<li><a href='{$url}page={$counter}'>{$counter}</a></li>";                    
+            }
+        } elseif($lastpage > 5 + ($adjacents * 2)){
+              
+            if($page < 1 + ($adjacents * 2)) {
+                  
+                for ($counter = 1; $counter < 4 + ($adjacents * 2); $counter++){
+                    if ($counter == $page)
+                        $pagination.= "<li><a class='current'>{$counter}</a></li>";
+                    else
+                        $pagination.= "<li><a href='{$url}page={$counter}'>{$counter}</a></li>";                    
+                }
+                //$pagination.= "<li class='dot'>...</li>";
+                $pagination.= "<li><a href='{$url}page={$lpm1}'>{$lpm1}</a></li>";
+                $pagination.= "<li><a href='{$url}page={$lastpage}'>{$lastpage}</a></li>";  
+                      
+            } elseif($lastpage - ($adjacents * 2) > $page && $page > ($adjacents * 2)) {
+                  
+                $pagination.= "<li><a href='{$url}page=1'>1</a></li>";
+                $pagination.= "<li><a href='{$url}page=2'>2</a></li>";
+                //$pagination.= "<li class='dot'>...</li>";
+                for ($counter = $page - $adjacents; $counter <= $page + $adjacents; $counter++) {
+                    if ($counter == $page)
+                        $pagination.= "<li><a class='current'>{$counter}</a></li>";
+                    else
+                        $pagination.= "<li><a href='{$url}page={$counter}'>{$counter}</a></li>";                    
+                }
+                //$pagination.= "<li class='dot'>..</li>";
+                $pagination.= "<li><a href='{$url}page={$lpm1}'>{$lpm1}</a></li>";
+                $pagination.= "<li><a href='{$url}page={$lastpage}'>{$lastpage}</a></li>";      
+                  
+            } else {
+                  
+                $pagination.= "<li><a href='{$url}page=1'>1</a></li>";
+                $pagination.= "<li><a href='{$url}page=2'>2</a></li>";
+                //$pagination.= "<li class='dot'>..</li>";
+                for ($counter = $lastpage - (2 + ($adjacents * 2)); $counter <= $lastpage; $counter++) {
+                    if ($counter == $page)
+                        $pagination.= "<li><a class='current'>{$counter}</a></li>";
+                    else
+                        $pagination.= "<li><a href='{$url}page={$counter}'>{$counter}</a></li>";                    
+                }
+            }
+        }
+          
+            if ($page < $counter - 1) {
+                $pagination.= "<li><a href='{$url}page={$next}'>{$nextlabel}</a></li>";
+                $pagination.= "<li><a href='{$url}page=$lastpage'>{$lastlabel}</a></li>";
+            }
+          
+        $pagination.= "</ul>";        
+    }
+      
+    return $pagination;
+}
+
+//new user email
+function email_new_user($link, $user_id, $password) {
+
+	// Set content-type for HTML email
+	$headers = "MIME-Version: 1.0" . "\r\n";
+	$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+
+	// Email Headers
+	$headers .= 'From: Excell Supply <noreply@excell-supply.com>' . "\r\n";
+
+	// HTML email template for new registered user
+	$email = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <title>Excell Supply New Recruit Email</title>
+      
+      <style type="text/css">
+         /* Client-specific Styles */
+         #outlook a {padding:0;} /* Force Outlook to provide a "view in browser" menu link. */
+         body{width:600px !important; -webkit-text-size-adjust:600px; -ms-text-size-adjust:600px; margin:0; padding:0;}
+         /* Prevent Webkit and Windows Mobile platforms from changing default font sizes, while not breaking desktop design. */
+         .ExternalClass {width:100%;} /* Force Hotmail to display emails at full width */
+         .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {line-height: 100%;} /* Force Hotmail to display normal line spacing.*/
+         #backgroundTable {margin:0; padding:0; width:100% !important; line-height: 100% !important;}
+         img {outline:none; text-decoration:none;border:none; -ms-interpolation-mode: bicubic;}
+         a img {border:none;}
+         .image_fix {display:block;}
+         p {margin: 0px 0px !important;}
+         table td {border-collapse: collapse;}
+         table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+         a {color: #0a8cce;text-decoration: none;text-decoration:none!important;}
+         /*STYLES*/
+         table[class=full] { width: 100%; clear: both; }
+      </style>
+   </head>
+   <body>
+<!-- Start of preheader -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="preheader" >
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+                           <tbody>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td width="100%" height="10"></td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td>
+                                    <table width="100" align="left" border="0" cellpadding="0" cellspacing="0">
+                                       <tbody>
+                                          <tr>
+                                             <td align="left" valign="middle" style="font-family: Helvetica, arial, sans-serif; font-size: 14px;color: #666666" st-content="viewonline" class="mobile-hide">
+                                                <a href="'.ROOT_URL.'" style="text-decoration: none; color: #666666">Visit Portal</a> 
+                                             </td>
+                                          </tr>
+                                       </tbody>
+                                    </table>
+                                    <table width="200" align="right" border="0" cellpadding="0" cellspacing="0" class="devicewidth">
+                                       <tbody>
+                                          <tr>
+                                             <td width="100" height="30" align="right">
+                                                <div class="imgpop">
+                                                   <a target="_blank" href="'.ROOT_URL.'">
+                                                   <img src="'.ROOT_URL.'/img/email/email-logo.png" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none;">
+                                                   </a>
+                                                </div>
+                                             </td>
+                                          </tr>
+                                       </tbody>
+                                    </table>
+                                 </td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td width="100%" height="10"></td>
+                              </tr>
+                              <!-- Spacing -->
+                           </tbody>
+                        </table>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of preheader -->       
+<!-- Start of main-banner -->
+<table width="100%" bgcolor="#F45E55" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="banner">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" align="center" cellspacing="0" cellpadding="30" border="0" class="devicewidth">
+                           <tbody>
+                              <tr>
+                                 <!-- start of image -->
+                                 <td align="center" st-image="banner-image">
+                                    <div class="imgpop">
+                                       <a target="_blank" href="'.ROOT_URL.'"><img border="0" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none; margin-bottom: 20px" src="'.ROOT_URL.'/img/email/header-text.png" class="banner"> <img border="0" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none;" src="'.ROOT_URL.'/img/email/text-header.png" class="banner"></a>
+                                    </div>
+                                 </td>
+                              </tr>
+                           </tbody>
+                        </table>
+                        <!-- end of image -->
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of main-banner --> 
+<!-- Start of seperator -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="seperator">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" align="center" cellspacing="0" cellpadding="0" border="0" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td align="center" height="20" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of seperator -->   
+<!-- Start Full Text -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="full-text">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+                           <tbody>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td>
+                                    <table width="560" align="center" cellpadding="0" cellspacing="0" border="0" class="devicewidthinner">
+                                       <tbody>
+                                          <!-- Title -->
+                                          <tr>
+                                             <td style="font-family: Helvetica, arial, sans-serif; font-size: 30px; color: #333333; text-align:center; line-height: 30px;" st-title="fulltext-heading">
+                                                Welcome to the team
+                                             </td>
+                                          </tr>
+                                          <!-- End of Title -->
+                                          <!-- spacing -->
+                                          <tr>
+                                             <td width="100%" height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                                          </tr>
+                                          <!-- End of spacing -->
+                                          <!-- content -->
+                                          <tr>
+                                             <td style="font-family: Helvetica, arial, sans-serif; font-size: 14px; color: #666666; text-align:center; line-height: 30px;" st-content="fulltext-content">
+                                                Hi '.get_user_data($link, $user_id, 'user_fullname').',<br/>
+                                                Welcome to the Excell Supply team. A user has been created for you on our staff room portal where you will have exclusive access to resources and where you can share your experiences with other teachers that are part of the Excell Supply team.<br/>
+                                                <br/>
+                                                Follow the link below to activate your account and get started;<br/>
+                                                <a href="'.ROOT_URL.'/activate.php?user_id='.$user_id.'&activation='.get_user_data($link, $user_id, 'user_salt').'">'.ROOT_URL.'/activate.php?user_id='.$user_id.'&activation='.get_user_data($link, $user_id, 'user_salt').'</a>
+                                             </td>
+                                          </tr>
+                                          <!-- End of content -->
+                                       </tbody>
+                                    </table>
+                                 </td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                              </tr>
+                              <!-- Spacing -->
+                           </tbody>
+                        </table>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- end of full text -->
+<!-- Start of seperator -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="seperator">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" align="center" cellspacing="0" cellpadding="0" border="0" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td align="center" height="30" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                     <td width="550" align="center" height="1" bgcolor="#d1d1d1" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                     <td align="center" height="30" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of seperator -->   
+</body>
+</html>';
+	
+	// Send welcome email
+	mail(get_user_data($link, $user_id,'user_email'), 'Welcome to Excell Supply', $email, $headers);
+
+	// Check if password field is empty or not
+	if(!empty($password)) {
+
+		// Set content-type for HTML email
+		$headers = "MIME-Version: 1.0" . "\r\n";
+		$headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+
+		// Email Headers
+		$headers .= 'From: Excell Supply <noreply@excell-supply.com>' . "\r\n";
+
+		// HTML email template for new registered user
+		$email = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+      <title>Your new password</title>
+      
+      <style type="text/css">
+         /* Client-specific Styles */
+         #outlook a {padding:0;} /* Force Outlook to provide a "view in browser" menu link. */
+         body{width:600px !important; -webkit-text-size-adjust:600px; -ms-text-size-adjust:600px; margin:0; padding:0;}
+         /* Prevent Webkit and Windows Mobile platforms from changing default font sizes, while not breaking desktop design. */
+         .ExternalClass {width:100%;} /* Force Hotmail to display emails at full width */
+         .ExternalClass, .ExternalClass p, .ExternalClass span, .ExternalClass font, .ExternalClass td, .ExternalClass div {line-height: 100%;} /* Force Hotmail to display normal line spacing.*/
+         #backgroundTable {margin:0; padding:0; width:100% !important; line-height: 100% !important;}
+         img {outline:none; text-decoration:none;border:none; -ms-interpolation-mode: bicubic;}
+         a img {border:none;}
+         .image_fix {display:block;}
+         p {margin: 0px 0px !important;}
+         table td {border-collapse: collapse;}
+         table { border-collapse:collapse; mso-table-lspace:0pt; mso-table-rspace:0pt; }
+         a {color: #0a8cce;text-decoration: none;text-decoration:none!important;}
+         /*STYLES*/
+         table[class=full] { width: 100%; clear: both; }
+      </style>
+   </head>
+   <body>
+<!-- Start of preheader -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="preheader" >
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+                           <tbody>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td width="100%" height="10"></td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td>
+                                    <table width="100" align="left" border="0" cellpadding="0" cellspacing="0">
+                                       <tbody>
+                                          <tr>
+                                             <td align="left" valign="middle" style="font-family: Helvetica, arial, sans-serif; font-size: 14px;color: #666666" st-content="viewonline" class="mobile-hide">
+                                                <a href="'.ROOT_URL.'" style="text-decoration: none; color: #666666">Visit Portal</a> 
+                                             </td>
+                                          </tr>
+                                       </tbody>
+                                    </table>
+                                    <table width="200" align="right" border="0" cellpadding="0" cellspacing="0" class="devicewidth">
+                                       <tbody>
+                                          <tr>
+                                             <td width="100" height="30" align="right">
+                                                <div class="imgpop">
+                                                   <a target="_blank" href="'.ROOT_URL.'">
+                                                   <img src="'.ROOT_URL.'/img/email/email-logo.png" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none;">
+                                                   </a>
+                                                </div>
+                                             </td>
+                                          </tr>
+                                       </tbody>
+                                    </table>
+                                 </td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td width="100%" height="10"></td>
+                              </tr>
+                              <!-- Spacing -->
+                           </tbody>
+                        </table>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of preheader -->       
+<!-- Start of main-banner -->
+<table width="100%" bgcolor="#F45E55" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="banner">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" align="center" cellspacing="0" cellpadding="30" border="0" class="devicewidth">
+                           <tbody>
+                              <tr>
+                                 <!-- start of image -->
+                                 <td align="center" st-image="banner-image">
+                                    <div class="imgpop">
+                                       <a target="_blank" href="'.ROOT_URL.'"><img border="0" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none; margin-bottom: 20px" src="'.ROOT_URL.'/img/email/header-password.png" class="banner"> <img border="0" alt="" border="0" style="display:block; border:none; outline:none; text-decoration:none;" src="'.ROOT_URL.'/img/email/text-password.png" class="banner"></a>
+                                    </div>
+                                 </td>
+                              </tr>
+                           </tbody>
+                        </table>
+                        <!-- end of image -->
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of main-banner --> 
+<!-- Start of seperator -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="seperator">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" align="center" cellspacing="0" cellpadding="0" border="0" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td align="center" height="20" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of seperator -->   
+<!-- Start Full Text -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="full-text">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td width="100%">
+                        <table width="600" cellpadding="0" cellspacing="0" border="0" align="center" class="devicewidth">
+                           <tbody>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td>
+                                    <table width="560" align="center" cellpadding="0" cellspacing="0" border="0" class="devicewidthinner">
+                                       <tbody>
+                                          <!-- Title -->
+                                          <tr>
+                                             <td style="font-family: Helvetica, arial, sans-serif; font-size: 30px; color: #333333; text-align:center; line-height: 30px;" st-title="fulltext-heading">
+                                                Welcome to the team
+                                             </td>
+                                          </tr>
+                                          <!-- End of Title -->
+                                          <!-- spacing -->
+                                          <tr>
+                                             <td width="100%" height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                                          </tr>
+                                          <!-- End of spacing -->
+                                          <!-- content -->
+                                          <tr>
+                                             <td style="font-family: Helvetica, arial, sans-serif; font-size: 14px; color: #666666; text-align:center; line-height: 30px;" st-content="fulltext-content">
+                                                Hi '.get_user_data($link, $user_id, 'user_fullname').',<br/>
+                                                A password has been created for you when your user account was created.<br/>
+                                                <br/>
+                                                <h3>'.$password.'</h3>
+                                                <br/>
+                                                You can change this in your account settings once you have activated your account.
+                                          </tr>
+                                          <!-- End of content -->
+                                       </tbody>
+                                    </table>
+                                 </td>
+                              </tr>
+                              <!-- Spacing -->
+                              <tr>
+                                 <td height="20" style="font-size:1px; line-height:1px; mso-line-height-rule: exactly;">&nbsp;</td>
+                              </tr>
+                              <!-- Spacing -->
+                           </tbody>
+                        </table>
+                     </td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- end of full text -->
+<!-- Start of seperator -->
+<table width="100%" bgcolor="#ffffff" cellpadding="0" cellspacing="0" border="0" id="backgroundTable" st-sortable="seperator">
+   <tbody>
+      <tr>
+         <td>
+            <table width="600" align="center" cellspacing="0" cellpadding="0" border="0" class="devicewidth">
+               <tbody>
+                  <tr>
+                     <td align="center" height="30" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                     <td width="550" align="center" height="1" bgcolor="#d1d1d1" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+                  <tr>
+                     <td align="center" height="30" style="font-size:1px; line-height:1px;">&nbsp;</td>
+                  </tr>
+               </tbody>
+            </table>
+         </td>
+      </tr>
+   </tbody>
+</table>
+<!-- End of seperator -->   
+</body>
+</html>';
+	
+	// Send password email
+	mail(get_user_data($link, $user_id,'user_email'), 'Your new password', $email, $headers);
+
+	}
+	
 }
 
 ?>

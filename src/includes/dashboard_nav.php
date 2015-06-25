@@ -18,16 +18,29 @@
 
 	</li>
 	
-	<li role="presentation">
+	<li role="presentation" <?php if($page == 'messages') echo 'class="active"'; ?>>
 		<a href="<?php echo ROOT_URL; ?>/user/messages/<?php echo $_SESSION['user_id']; ?>"><i class="fa fa-fw fa-comment"></i> Messages</a>
+			
+		<ul class="nav submenu">
+			<li <?php if($page == 'messages' && $subpage != 'unreadmessages') echo 'class="active"'; ?> >
+				<a href="<?php echo ROOT_URL; ?>/user/messages/<?php echo $_SESSION['user_id']; ?>">Inbox <span class="badge upper-badge"><?php echo unread_messages($link); ?></span></a>
+			<li>
+		</ul>
 	</li>
 	
-	<li role="presentation">
+	<li role="presentation" <?php if($page == 'forums') echo 'class="active"'; ?>>
 		<a href="<?php echo ROOT_URL; ?>/forums"><i class="fa fa-fw fa-book"></i> Staff Room Forums</a>
 	</li>
 	
+	<?php
+	//Hide availability option if user is admin
+	if(empty($_SESSION['user_admin'])) {
+	?>
 	<li role="presentation">
 		<a href="<?php echo ROOT_URL; ?>/user/availability/<?php echo $_SESSION['user_id']; ?>"><i class="fa fa-fw fa-briefcase"></i> Availability</a>
 	</li>
-
+	<?php
+	}
+	?>
+	
 </ul>

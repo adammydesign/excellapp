@@ -11,6 +11,9 @@ $dbpwd = 'root';
 
 $link = mysqli_connect($dbhost,$dbuser,$dbpwd,$dbname) or die("Error " . mysqli_error($link));
 
+//Debug mode when needed
+//ini_set('display_errors', 'On');
+
 //Defined variables
 define('ROOT_URL', 'http://app.excell-supply.local');
 

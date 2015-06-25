@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	$password = mysqli_real_escape_string($link, trim($_POST['password']));
 
 	//Query the database using email address as the key
-	$find_user = mysqli_query($link, "SELECT `user_id`, `user_email`, `user_password`, `user_salt` FROM `excell_users` WHERE `user_email` = '$email'");
+	$find_user = mysqli_query($link, "SELECT `user_id`, `user_email`, `user_password`, `user_salt`, `user_admin` FROM `excell_users` WHERE `user_email` = '$email'");
 
 	//check if there is a matching result with the email
 	if(mysqli_num_rows($find_user) == 1) {
@@ -29,6 +29,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			$_SESSION['LoggedIn'] = 1;
 			$_SESSION['username'] = $email;
 			$_SESSION['user_id'] = $user_data['user_id'];
+			//check if the user is an administrator
+			if($user_data['user_admin'] == 1) {
+				$_SESSION['user_admin'] = 1;
+			}
 			http_response_code(200);
 			exit;
 
